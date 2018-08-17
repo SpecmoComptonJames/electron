@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import os
+import subprocess
 import sys
 import zipfile
 
@@ -25,9 +26,9 @@ def strip_binary(binary_path, target_cpu):
     strip = 'strip'
   execute([strip, binary_path])
 
-def execute(argv, env=os.environ, cwd=None):
+def execute(argv):
   try:
-    output = subprocess.check_output(argv, stderr=subprocess.STDOUT, env=env, cwd=cwd)
+    output = subprocess.check_output(argv, stderr=subprocess.STDOUT)
     return output
   except subprocess.CalledProcessError as e:
     print e.output
@@ -35,10 +36,16 @@ def execute(argv, env=os.environ, cwd=None):
 
 def main(argv):
   dist_zip, runtime_deps, target_cpu, target_os = argv
-  with zipfile.ZipFile(dist_zip, 'w', allowZip64=True) as z:
-    with open(runtime_deps) as f:
-      for dep in f.readlines():
-        dep = dep.strip()
+  dist_files = []
+  with open(runtime_deps) as f:
+    for dep in f.readlines():
+      dep = dep.strip()
+      dist_files += dep
+  if sys.platform == 'darwin':
+    execute(['zip', '-r', '-y', dist_zip] + dist_files)
+  else:
+    with zipfile.ZipFile(dist_zip, 'w', zipfile.ZIP_DEFLATED) as z:
+      for dep in dist_files:
         if target_os == 'linux':
             strip_binaries(target_cpu, dep)
         if os.path.isdir(dep):
