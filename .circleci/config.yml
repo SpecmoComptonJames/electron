@@ -171,8 +171,8 @@ gn-build-steps: &gn-build-steps
         paths:
           - ~/.gclient-cache
         keys:
-          - v3-gclient-cache-{{ arch }}-{{ checksum "src/electron/DEPS" }}
-          - v3-gclient-cache-{{ arch }}-
+          - v4-gclient-cache-{{ arch }}-{{ checksum "src/electron/DEPS" }}
+          - v4-gclient-cache-{{ arch }}-
     - run:
         name: Gclient sync
         command: |
@@ -187,7 +187,7 @@ gn-build-steps: &gn-build-steps
     - save_cache:
         paths:
           - ~/.gclient-cache
-        key: v3-gclient-cache-{{ arch }}-{{ checksum "src/electron/DEPS" }}
+        key: v4-gclient-cache-{{ arch }}-{{ checksum "src/electron/DEPS" }}
     - run:
         name: GN gen
         command: |
@@ -378,7 +378,6 @@ jobs:
       INSTALL_MACOS_NODE: true
     macos:
       xcode: "8.3.3"
-    resource_class: xlarge
     <<: *build-steps
 
   electron-osx-x64-release-nightly:
@@ -399,7 +398,6 @@ jobs:
       INSTALL_MACOS_NODE: true
     macos:
       xcode: "8.3.3"
-    resource_class: 2xlarge
     <<: *build-steps
 
   electron-mas-x64-release-nightly:
