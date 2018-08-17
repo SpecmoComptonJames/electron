@@ -155,16 +155,6 @@ gn-build-steps: &gn-build-steps
           git clone --depth=1 https://chromium.googlesource.com/chromium/tools/depot_tools.git
           echo 'export PATH="$PATH:'"$PWD"'/depot_tools"' >> $BASH_ENV
           echo 'export GIT_CACHE_PATH="$HOME/.gclient-cache"' >> $BASH_ENV
-    - run:
-        name: Install Node.js 10 on MacOS
-        command: |
-          if [ "$INSTALL_MACOS_NODE" == "true" ]; then
-            echo 'Installing Node.js 10 for MacOS'
-            brew update
-            brew install node@10
-            brew install gnu-tar
-            echo 'export PATH="/usr/local/opt/gnu-tar/libexec/gnubin:$PATH"' >> $BASH_ENV
-          fi
     - checkout:
         path: src/electron
     - restore_cache:
@@ -192,11 +182,7 @@ gn-build-steps: &gn-build-steps
         name: GN gen
         command: |
           cd src
-          if [ "$(uname)" = "Linux" ]; then
-            SCCACHE_PATH="$PWD/libchromiumcontent/tools/sccache/aad2120/linux/sccache"
-          else
-            SCCACHE_PATH="$PWD/libchromiumcontent/tools/sccache/aad2120/mac/sccache"
-          fi
+          SCCACHE_PATH="$PWD/libchromiumcontent/tools/sccache/aad2120/linux/sccache"
           echo 'export SCCACHE_WRAPPER="'"$SCCACHE_PATH"'"' >> $BASH_ENV
           echo 'export CHROMIUM_BUILDTOOLS_PATH="'"$PWD"'/buildtools"' >> $BASH_ENV
           source $BASH_ENV
@@ -216,10 +202,7 @@ gn-build-steps: &gn-build-steps
         command: $SCCACHE_WRAPPER -s
     - run:
         name: Setup for headless testing
-        command: |
-          if [ "$(uname)" = "Linux" ]; then
-            sh -e /etc/init.d/xvfb start
-          fi
+        command: sh -e /etc/init.d/xvfb start
     - run:
         name: Test
         environment:
@@ -232,11 +215,77 @@ gn-build-steps: &gn-build-steps
             ninja -C out/Default third_party/electron_node:headers
             export npm_config_nodedir="$PWD/out/Default/gen/node_headers"
             (cd electron/spec && npm install)
-            if [ "$(uname)" = "Darwin" ]; then
-              ./out/Default/Electron.app/Contents/MacOS/Electron electron/spec --ci --enable-logging
-            else
-              python electron/script/lib/dbus_mock.py ./out/Default/electron electron/spec --ci --enable-logging
-            fi
+            python electron/script/lib/dbus_mock.py ./out/Default/electron electron/spec --ci --enable-logging
+          fi
+    - store_test_results:
+        path: src/junit
+    - store_artifacts:
+        path: src/junit
+    - store_artifacts:
+        path: src/out/Default/dist.zip
+
+gn-mac-build-steps: &gn-mac-build-steps
+  steps:
+    - run:
+        name: Setup depot tools
+        command: |
+          git clone --depth=1 https://chromium.googlesource.com/chromium/tools/depot_tools.git
+          echo 'export PATH="$PATH:'"$PWD"'/depot_tools"' >> $BASH_ENV
+          echo 'export GIT_CACHE_PATH="$HOME/.gclient-cache"' >> $BASH_ENV
+    - run:
+        name: Install Node.js 10 on MacOS
+        command: |
+          echo 'Installing Node.js 10 for MacOS'
+          brew update
+          brew install node@10
+          brew install gnu-tar
+          echo 'export PATH="/usr/local/opt/gnu-tar/libexec/gnubin:$PATH"' >> $BASH_ENV
+    - checkout:
+        path: src/electron
+    - run:
+        name: Gclient sync
+        command: |
+          gclient config \
+            --name "src/electron" \
+            --unmanaged \
+            $GCLIENT_EXTRA_ARGS \
+            "$CIRCLE_REPOSITORY_URL"
+          gclient sync --with_branch_heads --with_tags
+    - run:
+        name: GN gen
+        command: |
+          cd src
+          SCCACHE_PATH="$PWD/libchromiumcontent/tools/sccache/aad2120/mac/sccache"
+          echo 'export SCCACHE_WRAPPER="'"$SCCACHE_PATH"'"' >> $BASH_ENV
+          echo 'export CHROMIUM_BUILDTOOLS_PATH="'"$PWD"'/buildtools"' >> $BASH_ENV
+          source $BASH_ENV
+          gn gen out/Default --args='import("'$GN_CONFIG'") cc_wrapper="'"$SCCACHE_PATH"'"'" $GN_EXTRA_ARGS"
+    - run:
+        name: Ninja build
+        command: |
+          cd src
+          ninja -C out/Default electron:electron_app
+    - run:
+        name: Build dist.zip
+        command: |
+          cd src
+          ninja -C out/Default electron:electron_dist_zip
+    - run:
+        name: Check sccache stats after build
+        command: $SCCACHE_WRAPPER -s
+    - run:
+        name: Test
+        environment:
+          MOCHA_REPORTER: mocha-junit-reporter
+          MOCHA_FILE: junit/test-results.xml
+          ELECTRON_DISABLE_SECURITY_WARNINGS: 1
+        command: |
+          if [ "$RUN_TESTS" != "false" ]; then
+            cd src
+            ninja -C out/Default third_party/electron_node:headers
+            export npm_config_nodedir="$PWD/out/Default/gen/node_headers"
+            (cd electron/spec && npm install)
+            ./out/Default/Electron.app/Contents/MacOS/Electron electron/spec --ci --enable-logging
           fi
     - store_test_results:
         path: src/junit
@@ -542,44 +591,40 @@ jobs:
   electron-gn-osx-debug-fyi:
     environment:
       GN_CONFIG: //electron/build/args/debug.gn
-      INSTALL_MACOS_NODE: true
       RUN_TESTS: false
     macos:
       xcode: "8.3.3"
     resource_class: large
-    <<: *gn-build-steps
+    <<: *gn-mac-build-steps
 
   electron-gn-osx-testing-fyi:
     environment:
       GN_CONFIG: //electron/build/args/testing.gn
-      INSTALL_MACOS_NODE: true
       RUN_TESTS: true
     macos:
       xcode: "8.3.3"
     resource_class: large
-    <<: *gn-build-steps
+    <<: *gn-mac-build-steps
 
   electron-gn-mas-debug-fyi:
     environment:
       GN_CONFIG: //electron/build/args/debug.gn
-      INSTALL_MACOS_NODE: true
       RUN_TESTS: false
       GN_EXTRA_ARGS: 'is_mas_build = true'
     macos:
       xcode: "8.3.3"
     resource_class: large
-    <<: *gn-build-steps
+    <<: *gn-mac-build-steps
 
   electron-gn-mas-testing-fyi:
     environment:
       GN_CONFIG: //electron/build/args/testing.gn
-      INSTALL_MACOS_NODE: true
       RUN_TESTS: true
       GN_EXTRA_ARGS: 'is_mas_build = true'
     macos:
       xcode: "8.3.3"
     resource_class: large
-    <<: *gn-build-steps
+    <<: *gn-mac-build-steps
 
 workflows:
   version: 2
