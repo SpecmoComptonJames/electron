@@ -12,7 +12,7 @@ LINUX_BINARIES_TO_STRIP = [
 def strip_binaries(target_cpu, dep):
   for binary in LINUX_BINARIES_TO_STRIP:
     if dep.endswith(binary):
-     strip_binary(os.path.join(DIST_DIR, binary), target_cpu)
+     strip_binary(dep, target_cpu)
 
 def strip_binary(binary_path, target_cpu):
   if target_cpu == 'arm':
