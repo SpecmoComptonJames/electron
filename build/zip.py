@@ -23,7 +23,7 @@ def strip_binary(binary_path, target_cpu):
     strip = 'mips64el-redhat-linux-strip'
   else:
     strip = 'strip'
-  execute([strip, binary_path], env=build_env())
+  execute([strip, binary_path])
 
 def execute(argv, env=os.environ, cwd=None):
   try:
