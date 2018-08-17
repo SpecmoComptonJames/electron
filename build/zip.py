@@ -3,8 +3,39 @@ import os
 import sys
 import zipfile
 
+LINUX_BINARIES_TO_STRIP = [
+  'electron',
+  'libffmpeg.so',
+  'libnode.so'
+]
+
+def strip_binaries(target_cpu):
+  for binary in LINUX_BINARIES_TO_STRIP:
+    strip_binary(os.path.join(DIST_DIR, binary), target_cpu)
+
+def strip_binary(binary_path, target_cpu):
+  if target_cpu == 'arm':
+    strip = 'arm-linux-gnueabihf-strip'
+  elif target_cpu == 'arm64':
+    strip = 'aarch64-linux-gnu-strip'
+  elif target_cpu == 'mips64el':
+    strip = 'mips64el-redhat-linux-strip'
+  else:
+    strip = 'strip'
+  execute([strip, binary_path], env=build_env())
+
+def execute(argv, env=os.environ, cwd=None):
+  try:
+    output = subprocess.check_output(argv, stderr=subprocess.STDOUT, env=env, cwd=cwd)
+    return output
+  except subprocess.CalledProcessError as e:
+    print e.output
+    raise e
+
 def main(argv):
-  dist_zip, runtime_deps = argv
+  dist_zip, runtime_deps, target_cpu, target_os = argv
+  if target_os == 'linux':
+      strip_binaries(target_cpu)
   with zipfile.ZipFile(dist_zip, 'w', allowZip64=True) as z:
     with open(runtime_deps) as f:
       for dep in f.readlines():
