@@ -9,9 +9,10 @@ LINUX_BINARIES_TO_STRIP = [
   'libnode.so'
 ]
 
-def strip_binaries(target_cpu):
+def strip_binaries(target_cpu, dep):
   for binary in LINUX_BINARIES_TO_STRIP:
-    strip_binary(os.path.join(DIST_DIR, binary), target_cpu)
+    if dep.endswith(binary):
+     strip_binary(os.path.join(DIST_DIR, binary), target_cpu)
 
 def strip_binary(binary_path, target_cpu):
   if target_cpu == 'arm':
@@ -34,12 +35,12 @@ def execute(argv, env=os.environ, cwd=None):
 
 def main(argv):
   dist_zip, runtime_deps, target_cpu, target_os = argv
-  if target_os == 'linux':
-      strip_binaries(target_cpu)
   with zipfile.ZipFile(dist_zip, 'w', allowZip64=True) as z:
     with open(runtime_deps) as f:
       for dep in f.readlines():
         dep = dep.strip()
+        if target_os == 'linux':
+            strip_binaries(target_cpu, dep)
         if os.path.isdir(dep):
           for root, dirs, files in os.walk(dep):
             for file in files:
