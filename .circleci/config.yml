@@ -588,9 +588,9 @@ jobs:
     resource_class: 2xlarge
     <<: *gn-build-steps
 
-  electron-gn-osx-debug-fyi:
+  electron-gn-osx-release-fyi:
     environment:
-      GN_CONFIG: //electron/build/args/debug.gn
+      GN_CONFIG: //electron/build/args/release.gn
       RUN_TESTS: false
     macos:
       xcode: "8.3.3"
@@ -606,9 +606,9 @@ jobs:
     resource_class: large
     <<: *gn-mac-build-steps
 
-  electron-gn-mas-debug-fyi:
+  electron-gn-mas-release-fyi:
     environment:
-      GN_CONFIG: //electron/build/args/debug.gn
+      GN_CONFIG: //electron/build/args/release.gn
       RUN_TESTS: false
       GN_EXTRA_ARGS: 'is_mas_build = true'
     macos:
@@ -628,47 +628,40 @@ jobs:
 
 workflows:
   version: 2
-  build-arm:
-    jobs:
-      - electron-linux-arm
-      - electron-linux-arm-test:
-          requires:
-            - electron-linux-arm
-  build-arm64:
-    jobs:
-      - electron-linux-arm64
-      - electron-linux-arm64-test:
-          requires:
-            - electron-linux-arm64
-  build-ia32:
-    jobs:
-      - electron-linux-ia32
-  build-x64:
-    jobs:
-      - electron-linux-x64
-  build-osx-x64:
-    jobs:
-      - electron-osx-x64
-  build-mas-x64:
-    jobs:
-      - electron-mas-x64
+  # build-arm:
+  #   jobs:
+  #     - electron-linux-arm
+  #     - electron-linux-arm-test:
+  #         requires:
+  #           - electron-linux-arm
+  # build-arm64:
+  #   jobs:
+  #     - electron-linux-arm64
+  #     - electron-linux-arm64-test:
+  #         requires:
+  #           - electron-linux-arm64
+  # build-ia32:
+  #   jobs:
+  #     - electron-linux-ia32
+  # build-x64:
+  #   jobs:
+  #     - electron-linux-x64
+  # build-osx-x64:
+  #   jobs:
+  #     - electron-osx-x64
+  # build-mas-x64:
+  #   jobs:
+  #     - electron-mas-x64
   build-gn-linux:
     jobs:
-      - electron-gn-linux-x64-debug-fyi
-      - electron-gn-linux-x64-testing-fyi
-      - electron-gn-linux-ia32-debug-fyi
-      - electron-gn-linux-ia32-testing-fyi
-      - electron-gn-linux-arm-debug-fyi
-      - electron-gn-linux-arm-testing-fyi
-      - electron-gn-linux-arm64-debug-fyi
-      - electron-gn-linux-arm64-testing-fyi
       - electron-gn-linux-x64-release-fyi
+      - electron-gn-linux-ia32-release-fyi
+      - electron-gn-linux-arm-release-fyi
+      - electron-gn-linux-arm64-release-fyi
   build-gn-mac:
     jobs:
-      - electron-gn-osx-debug-fyi
-      - electron-gn-osx-testing-fyi
-      - electron-gn-mas-debug-fyi
-      - electron-gn-mas-testing-fyi
+      - electron-gn-osx-release-fyi
+      - electron-gn-mas-release-fyi
 
   nightly-release-test:
     triggers:
