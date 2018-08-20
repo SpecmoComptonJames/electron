@@ -14,7 +14,6 @@ In sandboxed renderers the `process` object contains only a subset of the APIs:
 - `crash()`
 - `hang()`
 - `getHeapStatistics()`
-- `getProcessMemoryInfo()`
 - `getSystemMemoryInfo()`
 - `argv`
 - `execPath`
