@@ -13,6 +13,7 @@ LINUX_BINARIES_TO_STRIP = [
 def strip_binaries(target_cpu, dep):
   for binary in LINUX_BINARIES_TO_STRIP:
     if dep.endswith(binary):
+     print 'stripping binary: ' + dep
      strip_binary(dep, target_cpu)
 
 def strip_binary(binary_path, target_cpu):
@@ -40,7 +41,7 @@ def main(argv):
   with open(runtime_deps) as f:
     for dep in f.readlines():
       dep = dep.strip()
-      dist_files += dep
+      dist_files += [dep]
   print 'deps are'
   print dist_files
   if sys.platform == 'darwin':
