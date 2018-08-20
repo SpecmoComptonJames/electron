@@ -55,7 +55,6 @@ void AtomBindings::BindTo(v8::Isolate* isolate, v8::Local<v8::Object> process) {
   dict.SetMethod("hang", &Hang);
   dict.SetMethod("log", &Log);
   dict.SetMethod("getHeapStatistics", &GetHeapStatistics);
-  dict.SetMethod("getProcessMemoryInfo", &GetProcessMemoryInfo);
   dict.SetMethod("getCreationTime", &GetCreationTime);
   dict.SetMethod("getSystemMemoryInfo", &GetSystemMemoryInfo);
   dict.SetMethod("getCPUUsage", base::Bind(&AtomBindings::GetCPUUsage,
